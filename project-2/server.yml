@@ -1,0 +1,162 @@
+Description: >
+  Udacity's Udagram Server configurations
+
+Parameters:
+  Environment:
+    Description: Udagram Project Environment
+    Type: String
+
+Resources:
+  # Instance profile with role
+  ProfileWithRolesUdagram:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - UdacityS3ReadOnly
+
+  # Load Balancer Security group
+  LoadBalancerSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: LoadBalancerSecGroup
+      GroupDescription: Allow http traffic to Load balancer
+      VpcId:
+        Fn::ImportValue: !Sub ${Environment}-VPCID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment} Load Balancer SG
+      
+  # Server Security Group
+  ServeSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: App Server security group
+      GroupName: ServeSecGroup
+      VpcId:  
+        Fn::ImportValue: !Sub ${Environment}-VPCID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment} Web Server SG
+
+# Launch Template
+  
+# Server specs Launch configurations
+  UdagramLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      IamInstanceProfile: !Ref ProfileWithRolesUdagram
+      ImageId: ami-08fdec01f5df9998f
+      InstanceMonitoring: true
+      InstanceType: t2.medium
+      KeyName: udagram-key
+      SecurityGroups:
+        - Ref: ServeSecGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt-get update -y
+          sudo apt-get install apache2 -y
+          sudo systemctl start apache2.service
+          echo "It works! Udagram, Udacity" | sudo tee /var/www/html/index.html
+          sudo service apache2 restart
+      BlockDeviceMappings:
+        - DeviceName: "/dev/sdk"
+          Ebs:
+            VolumeSize: 10
+
+# Loadbalancer
+  ELBUdagaram:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Scheme: internet-facing
+      SecurityGroups:
+        - Ref: LoadBalancerSecGroup
+      Subnets:
+        - Fn::ImportValue: !Sub ${Environment}-PUB1-NET
+        - Fn::ImportValue: !Sub ${Environment}-PUB2-NET
+        
+# Target Group | Health check
+  UdagramAppTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 40
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 20
+      HealthyThresholdCount: 2
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 5
+      VpcId:
+        Fn::ImportValue: !Sub ${Environment}-VPCID
+
+# Listener
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref UdagramAppTargetGroup
+      LoadBalancerArn: !Ref ELBUdagaram
+      Port: 80
+      Protocol: HTTP
+
+  ALBListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref UdagramAppTargetGroup
+      Conditions:
+        - Field: path-pattern
+          Values: [/]
+      ListenerArn: !Ref Listener
+      Priority: 1
+
+# AutoScaling Group
+  UdagramASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        - Fn::ImportValue: !Sub ${Environment}-PRV-SNETS
+      LaunchConfigurationName: !Ref UdagramLaunchConfig
+      MaxSize: "6"
+      MinSize: "4"
+      TargetGroupARNs:
+        - Ref: UdagramAppTargetGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment} ASG
+          PropagateAtLaunch: true
+
+Outputs:
+  LBDNSName:
+    Description: Outputs The load balancers DNS Name
+    Value: !Join ["", ["http://", !GetAtt ELBUdagaram.DNSName]]
+    Export:
+      Name: !Sub ${Environment}-LB-DNS

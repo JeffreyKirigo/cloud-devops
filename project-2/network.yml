@@ -1,34 +1,33 @@
-Parameters:
-  EnviroName:
-    Description: This is the name of the current environment
-    Type: String
+Description: >
+  Udacity Project II - Udagram
+  Deploys a high-availability web app
+  Networking components
 
+Parameters:
+  Environment:
+    Description: Udagram Project Environment
+    Type: String
+  
   VpcCIDR:
-    Description: Please enter the VPC IP range (CIDR notation)
     Type: String
     Default: 10.0.0.0/16
-  
+
   PublicSubnet1CIDR:
-    Description: Please enter the IP range (CIDR notation)
     Type: String
     Default: 10.0.0.0/24
 
   PublicSubnet2CIDR:
-    Description: Please enter the IP range (CIDR notation)
     Type: String
     Default: 10.0.1.0/24
-      
-      
+
   PrivateSubnet1CIDR:
-    Description: Please enter the IP range (CIDR notation)
     Type: String
     Default: 10.0.2.0/24
-      
+
   PrivateSubnet2CIDR:
-    Description: Please enter the IP range (CIDR notation)
     Type: String
     Default: 10.0.3.0/24
-
+  
 Resources:
   VPC:
     Type: AWS::EC2::VPC
@@ -37,14 +36,14 @@ Resources:
       EnableDnsSupport: true
       Tags:
         - Key: Name
-          Value: !Ref EnviroName
+          Value: !Sub ${Environment} VPC
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
         - Key: Name
-          Value: !Ref EnviroName
+          Value: !Sub ${Environment} Internet Gateway
   AttachGateway:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
@@ -59,7 +58,7 @@ Resources:
       CidrBlock: !Ref PublicSubnet1CIDR
       Tags:
         - Key: Name
-          Value: !Ref EnviroName
+          Value: !Sub ${Environment} Public subnet (AZ1)
 
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
@@ -70,7 +69,7 @@ Resources:
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub ${EnviroName} private subnet (AZ1)
+          Value: !Sub ${Environment} private subnet (AZ1)
 
   PublicSubnet2:
     Type: AWS::EC2::Subnet
@@ -80,7 +79,7 @@ Resources:
       CidrBlock: !Ref PublicSubnet2CIDR
       Tags:
         - Key: Name
-          Value: !Ref EnviroName
+          Value: !Sub ${Environment} public subnet (AZ2)
 
   PrivateSubnet2:
     Type: AWS::EC2::Subnet
@@ -91,7 +90,7 @@ Resources:
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub ${EnviroName} private subnet (AZ2)
+          Value: !Sub ${Environment} private subnet (AZ2)
 
   NatGateway1:
     Type: AWS::EC2::NatGateway
@@ -100,7 +99,7 @@ Resources:
       SubnetId: !Ref PublicSubnet1
       Tags:
        - Key: Name
-         Value: !Ref EnviroName
+         Value: !Sub ${Environment} NAT I
 
   NatGateway2:
     Type: AWS::EC2::NatGateway
@@ -109,7 +108,7 @@ Resources:
       SubnetId: !Ref PublicSubnet2
       Tags:
       - Key: Name
-        Value: !Ref EnviroName
+        Value: !Sub ${Environment} NAT II 
 
   NatGatewayEIP1:
     Type: AWS::EC2::EIP
@@ -129,7 +128,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnviroName} Public Routes
+          Value: !Sub ${Environment} Public Routes
 
   DefaultPublicRoute:
     Type: AWS::EC2::Route
@@ -157,7 +156,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnviroName} Private Routes AZ1
+          Value: !Sub ${Environment} Private Routes AZ1
 
   DefaultPrivateRoute1:
     Type: AWS::EC2::Route
@@ -178,7 +177,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnviroName} Private Routes AZ2
+          Value: !Sub ${Environment} Private Routes AZ2
 
   DefaultPrivateRoute2:
     Type: AWS::EC2::Route
@@ -199,60 +198,58 @@ Outputs:
     Description: Reference to the created vpc
     Value: !Ref VPC
     Export: 
-      Name: !Sub ${EnviroName}-VPCID
+      Name: !Sub ${Environment}-VPCID
 
   VPCPublicRouteTable:
     Description: Reference to the Public route table
     Value: !Ref PublicRouteTable
     Export: 
-      Name: !Sub ${EnviroName}-PUB-RT
+      Name: !Sub ${Environment}-PUB-RT
 
   VpcPrivateRouteTable1:
     Description: Reference to the private route table in AZ1
     Value: !Ref PrivateRouteTable1
     Export: 
-      Name: !Sub ${EnviroName}-PRV1-RT
+      Name: !Sub ${Environment}-PRV1-RT
   
   VpcPrivateRouteTable2:
     Description: Reference to the private route table in AZ1
     Value: !Ref PrivateRouteTable2
     Export: 
-      Name: !Sub ${EnviroName}-PRV2-RT
+      Name: !Sub ${Environment}-PRV2-RT
 
   PublicSubnets:
     Description: Reference to a list of public subnets
     Value: !Join ["," , [!Ref PublicSubnet1, !Ref PublicSubnet2 ]]
     Export: 
-      Name: !Sub ${EnviroName}-PUB-SNETS
+      Name: !Sub ${Environment}-PUB-SNETS
   
   PrivateSubnets:
     Description: Reference to a list of private subnets
     Value: !Join ["," , [!Ref PrivateSubnet1, !Ref PrivateSubnet2 ]]
     Export: 
-      Name: !Sub ${EnviroName}-PRV-SNETS
+      Name: !Sub ${Environment}-PRV-SNETS
     
   PublicSubnet1:
     Description: Ref to public subnet 1
     Value: !Ref PublicSubnet1
     Export: 
-      Name: !Sub ${EnviroName}-PUB1-NET
+      Name: !Sub ${Environment}-PUB1-NET
     
   PublicSubnet2:
     Description: Ref to public subnet 2
     Value: !Ref PublicSubnet2
     Export: 
-      Name: !Sub ${EnviroName}-PUB2-NET
+      Name: !Sub ${Environment}-PUB2-NET
     
   PrivateSubnet1:
     Description: Ref to Private subnet 1
     Value: !Ref PrivateSubnet1
     Export: 
-      Name: !Sub ${EnviroName}-PRV1-NET
+      Name: !Sub ${Environment}-PRV1-NET
     
   PrivateSubnet2:
     Description: Ref to Private subnet 2
     Value: !Ref PrivateRouteTable1
     Export: 
-      Name: !Sub ${EnviroName}-PRV2-NET
-      
-  
+      Name: !Sub ${Environment}-PRV2-NET
