@@ -1,0 +1,13 @@
+Description: >
+    J's scripted / Udacity
+    Template to deploy a VPC
+
+Resources:
+    VPC:
+        Type: AWS::EC2::VPC
+        Properties:
+            CidrBlock: 10.0.0.0/16 
+            EnableDnsHostnames: true
+            Tags:
+            - Key: name
+              Value: myfirstvpcscript
