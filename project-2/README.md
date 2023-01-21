@@ -9,7 +9,7 @@ template provided creates and deploys infrastructure for a dummy application fro
 It begins by deploying the network components, followed by servers, security roles and software.  
 ### Infrastructure design.  
 ---
-![Infrastructure design](/assests/images/design.jpeg)  
+![Infrastructure design](assests/images/design.jpeg)  
 ---
 ## How to run the template.  
 ---
