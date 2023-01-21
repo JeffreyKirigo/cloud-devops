@@ -10,7 +10,7 @@ It begins by deploying the network components, followed by servers, security rol
 ---
 ### Infrastructure design.  
 ---
-![IAC](/Deploy%20a%20high-availability%20web%20app%20using%20CloudFormation%20Past%20due.jpeg "Infrastructure design")  
+![Infrastructure design](project-2/Deploy%20a%20high-availability%20web%20app%20using%20CloudFormation%20Past%20due.jpeg "Infrastructure design")  
 ---
 ## How to run the template.  
 ---
