@@ -72,7 +72,6 @@ Resources:
       ImageId: ami-08fdec01f5df9998f
       InstanceMonitoring: true
       InstanceType: t2.medium
-      KeyName: udagram-key
       SecurityGroups:
         - Ref: ServeSecGroup
       UserData:
